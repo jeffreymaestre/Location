@@ -58,6 +58,7 @@ import com.jeffrey.uberclon.activities.client.MapClientActivity;
 import com.jeffrey.uberclon.includes.MyToolbar;
 import com.jeffrey.uberclon.providers.AuthProvider;
 import com.jeffrey.uberclon.providers.GeofireProvider;
+import com.jeffrey.uberclon.providers.TokenProvider;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -73,6 +74,8 @@ public class MapClientActivity extends AppCompatActivity implements OnMapReadyCa
     private FusedLocationProviderClient mFusedLocation;
 
     private GeofireProvider mGeofireProvider;
+    private TokenProvider mTokenProvider;
+
 
     private final static int LOCATION_REQUEST_CODE = 1;
     private final static int SETTINGS_REQUEST_CODE = 2;
@@ -144,7 +147,9 @@ public class MapClientActivity extends AppCompatActivity implements OnMapReadyCa
         MyToolbar.show(this, "Cliente", false);
 
         mAuthProvider = new AuthProvider();
-        mGeofireProvider = new GeofireProvider();
+        mGeofireProvider = new GeofireProvider("active_drivers");
+        mTokenProvider = new TokenProvider();
+
         mFusedLocation = LocationServices.getFusedLocationProviderClient(this);
 
         mMapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
@@ -167,6 +172,8 @@ public class MapClientActivity extends AppCompatActivity implements OnMapReadyCa
                 requestDriver();
             }
         });
+
+        generateToken();
     }
 
     private void requestDriver() {
@@ -262,7 +269,7 @@ public class MapClientActivity extends AppCompatActivity implements OnMapReadyCa
 
 
     private void getActiveDrivers() {
-        mGeofireProvider.getActiveDrivers(mCurrentLatLng).addGeoQueryEventListener(new GeoQueryEventListener() {
+        mGeofireProvider.getActiveDrivers(mCurrentLatLng, 10).addGeoQueryEventListener(new GeoQueryEventListener() {
             @Override
             public void onKeyEntered(String key, GeoLocation location) {
                 // AÑADIREMOS LOS MARCADORES DE LOS CONDUCTORES QUE SE CONECTEN EN LA APLICACION
@@ -498,6 +505,14 @@ public class MapClientActivity extends AppCompatActivity implements OnMapReadyCa
         if (item.getItemId() == R.id.action_logout) {
             logout();
         }
+        if (item.getItemId() == R.id.action_update) {
+            Intent intent = new Intent(MapClientActivity.this, UpdateProfileActivity.class);
+            startActivity(intent);
+        }
+        if (item.getItemId() == R.id.action_history) {
+            Intent intent = new Intent(MapClientActivity.this, HistoryBookingClientActivity.class);
+            startActivity(intent);
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -507,4 +522,9 @@ public class MapClientActivity extends AppCompatActivity implements OnMapReadyCa
         startActivity(intent);
         finish();
     }
+
+    void generateToken() {
+        mTokenProvider.create(mAuthProvider.getId());
+    }
+
 }

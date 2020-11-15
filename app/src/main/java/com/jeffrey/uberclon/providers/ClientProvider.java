@@ -11,16 +11,26 @@ import java.util.Map;
 public class ClientProvider {
     DatabaseReference mDatabase;
 
-    public ClientProvider(){
+    public ClientProvider() {
         mDatabase = FirebaseDatabase.getInstance().getReference().child("Users").child("Clients");
     }
 
-    public Task<Void> create(Client client){
+    public Task<Void> create(Client client) {
         Map<String, Object> map = new HashMap<>();
         map.put("name", client.getName());
         map.put("email", client.getEmail());
-
         return mDatabase.child(client.getId()).setValue(map);
-        //return mDatabase.child(client.getId()).setValue(client);
     }
+
+    public Task<Void> update(Client client) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("name", client.getName());
+        map.put("image", client.getImage());
+        return mDatabase.child(client.getId()).updateChildren(map);
+    }
+
+    public DatabaseReference getClient(String idClient) {
+        return mDatabase.child(idClient);
+    }
+
 }
