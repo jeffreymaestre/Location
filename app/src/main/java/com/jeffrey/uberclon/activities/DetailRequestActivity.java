@@ -191,11 +191,12 @@ public class DetailRequestActivity extends AppCompatActivity implements OnMapRea
                     Info info = dataSnapshot.getValue(Info.class);
                     double totalDistance = distanceValue * info.getKm();
                     double totalDuration = durationValue * info.getMin();
-                    double total = totalDistance + totalDuration;
+                    //double total = totalDistance + totalDuration;
+                    double total = 3000+(0.25 * totalDistance);
                     double minTotal = total - 0.5;
                     double maxTotal = total + 0.5;
-                    //mTextViewPrice.setText("$" + total);
-                    mTextViewPrice.setText("$" + minTotal + " - " + maxTotal);
+                    mTextViewPrice.setText("$" + total);
+                    //mTextViewPrice.setText("$" + minTotal + " - " + maxTotal);
                 }
             }
 

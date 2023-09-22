@@ -1,4 +1,4 @@
-package com.jeffrey.uberclon.activities;
+ package com.jeffrey.uberclon.activities;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -8,70 +8,63 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
-import com.google.firebase.auth.FirebaseAuth;
 import com.jeffrey.uberclon.R;
-import com.jeffrey.uberclon.activities.client.MapClientActivity;
-import com.jeffrey.uberclon.activities.driver.MapDriverActivity;
+import com.jeffrey.uberclon.activities.driver.RegisterDriverActivity;
+import com.jeffrey.uberclon.includes.MyToolbar;
 
-public class MainActivity extends AppCompatActivity {
 
-            Button mButtonClient;
-            Button mButtonDriver;
+ public class SelectOptionAutActivity extends AppCompatActivity {
 
-            SharedPreferences mPref;
 
-    @Override
+     Button mButtonGoToLogin;
+     Button mButtonGoToRegister;
+     SharedPreferences mPref;
+
+
+     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_select_option_aut);
 
+        MyToolbar.show(this, "Seleccionar opcion", true);
         mPref = getApplicationContext().getSharedPreferences("typeUser", MODE_PRIVATE);
-        final SharedPreferences.Editor editor = mPref.edit();
 
-        mButtonClient = findViewById(R.id.btnClient);
-        mButtonDriver = findViewById(R.id.btnDriver);
 
-        mButtonClient.setOnClickListener(new View.OnClickListener() {
+        mButtonGoToLogin = findViewById(R.id.btnGoToLogin);
+        mButtonGoToRegister = findViewById(R.id.btnGoToRegister);
+        mButtonGoToLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                editor.putString("user", "client");
-                editor.apply();
-                goToSelectAut();
+                goToLogin();
             }
         });
-
-        mButtonDriver.setOnClickListener(new View.OnClickListener() {
+        mButtonGoToRegister.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                editor.putString("user", "driver");
-                editor.apply();
-                goToSelectAut();
+                goToRegister();
             }
         });
-
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
+    public void goToLogin(){
 
-        if (FirebaseAuth.getInstance().getCurrentUser() != null){
-            String user = mPref.getString("user", "");
-            if (user.equals("client")){
-                Intent intent = new Intent(MainActivity.this, MapClientActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(intent);
-            }
-            else{
-                Intent intent = new Intent(MainActivity.this, MapDriverActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(intent);
-            }
-        }
-    }
-
-    private void goToSelectAut() {
-        Intent intent= new Intent(MainActivity.this, SelectOptionAutActivity.class);
+        Intent intent= new Intent(SelectOptionAutActivity.this, LoginActivity.class);
         startActivity(intent);
+
     }
+
+     public void goToRegister(){
+
+         String typeUser = mPref.getString("user", "");
+         if (typeUser.equals("client")){
+
+             Intent intent= new Intent(SelectOptionAutActivity.this, RegisterActivity.class);
+             startActivity(intent);
+         }
+            else{
+             Intent intent= new Intent(SelectOptionAutActivity.this, RegisterDriverActivity.class);
+             startActivity(intent);
+         }
+
+     }
 }

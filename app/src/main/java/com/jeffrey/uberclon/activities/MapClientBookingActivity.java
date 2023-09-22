@@ -187,8 +187,8 @@ public class MapClientBookingActivity extends AppCompatActivity implements OnMap
                     double originLng = Double.parseDouble(dataSnapshot.child("originLng").getValue().toString());
                     mOriginLatLng = new LatLng(originLat, originLng);
                     mDestinationLatLng = new LatLng(destinationLat, destinationLng);
-                    mTextViewOriginClientBooking.setText("recoger en: " + origin);
-                    mTextViewDestinationClientBooking.setText("destino: " + destination);
+                    mTextViewOriginClientBooking.setText("Recoger en: " + origin);
+                    mTextViewDestinationClientBooking.setText("Destino: " + destination);
                     mMap.addMarker(new MarkerOptions().position(mOriginLatLng).title("Recoger aqui").icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_pin_red)));
                     getDriver(idDriver);
                     getDriverLocation(idDriver);
