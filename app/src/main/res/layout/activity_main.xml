@@ -9,30 +9,72 @@
     tools:context=".activities.MainActivity">
 
 
- <include layout="@layout/action_bar_toollbar"/>
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:gravity="center">
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:text="USUARIO"
+            android:textColor="@color/colorWhite"
+            android:textStyle="bold"
+            android:textSize="25dp" />
+
+
         <ImageView
             android:layout_width="150dp"
             android:layout_height="150dp"
             android:src="@drawable/servicio"
-            android:layout_marginTop="58dp"
+            android:layout_marginTop="50dp"
             android:layout_gravity="center"/>
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Seleccione una opcion"
+            android:text="@string/phone_description"
             android:textAlignment="center"
             android:textColor="@color/colorWhite"
-            android:layout_margin="40dp"
-            android:textSize="20dp"
+            android:layout_marginLeft="50dp"
+            android:layout_marginRight="50dp"
+            android:layout_marginTop="15dp"
+            android:layout_marginBottom="25dp"
+            android:textSize="17sp"
             android:textStyle="bold"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="25dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginLeft="20dp"
+            android:gravity="center_vertical">
+
+            <com.hbb20.CountryCodePicker
+                android:id="@+id/ccp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:ccp_autoDetectCountry="true"
+                app:ccp_contentColor="@color/colorWhite"
+                app:ccp_textSize="18dp"
+                />
+
+            <EditText
+                android:id="@+id/editTextPhone"
+                android:layout_width="200dp"
+                android:layout_height="wrap_content"
+                android:hint="Telefono"
+                android:inputType="phone"
+                android:textSize="18dp"
+                android:theme="@style/EditTextWhite"/>
+
+        </LinearLayout>
+
+
 
         <Button
             android:id="@+id/btnGoToLogin"
@@ -40,34 +82,14 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="30dp"
             android:background="@drawable/rounded_botton"
-            android:text="INICIAR SESION"
+            android:text="ENVIAR CODIGO"
             android:backgroundTint="@color/colorBlueLight"
             android:textColor="@color/colorWhite"
             android:layout_marginRight="30dp"/>
 
-        <Button
-            android:id="@+id/btnGoToRegister"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="REGISTRARSE"
-            android:backgroundTint="@color/colorWhite"
-            android:background="@drawable/rounded_botton"
-            android:layout_marginLeft="30dp"
-            android:layout_marginRight="30dp"
-            android:layout_marginTop="10dp"/>
 
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal"
-            android:gravity="bottom"
-            android:layout_margin="20dp"
-            >
-
-
-        </LinearLayout>
 
     </LinearLayout>
+
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -28,7 +28,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Nombre:"
-                android:textColor="@color/colorBlueLight"
+                android:textColor="@color/colorBlueLightReal"
                 android:textSize="15sp"
                 android:layout_marginTop="15dp"
                 android:layout_marginLeft="15dp" />
@@ -47,7 +47,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Origen:"
-                android:textColor="@color/colorBlueLight"
+                android:textColor="@color/colorBlueLightReal"
                 android:textSize="15sp"
                 android:layout_marginTop="10dp"
                 android:layout_marginLeft="15dp" />
@@ -66,7 +66,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Destino:"
-                android:textColor="@color/colorBlueLight"
+                android:textColor="@color/colorBlueLightReal"
                 android:textSize="15sp"
                 android:layout_marginTop="10dp"
                 android:layout_marginLeft="15dp" />
@@ -85,7 +85,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Calificacion obtenida:"
-                android:textColor="@color/colorBlueLight"
+                android:textColor="@color/colorBlueLightReal"
                 android:textSize="15sp"
                 android:layout_marginTop="10dp"
                 android:layout_marginLeft="15dp" />

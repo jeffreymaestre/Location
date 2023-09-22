@@ -1,4 +1,4 @@
-package com.jeffrey.uberclon.activities.client;
+package com.jeffrey.uberclon.activities;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -11,6 +11,8 @@ import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentSender;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
@@ -25,16 +27,23 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.firebase.geofire.GeoLocation;
 import com.firebase.geofire.GeoQueryEventListener;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -50,18 +59,24 @@ import com.google.android.libraries.places.api.model.RectangularBounds;
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
+import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.ValueEventListener;
 import com.google.maps.android.SphericalUtil;
 import com.jeffrey.uberclon.R;
-import com.jeffrey.uberclon.activities.MainActivity;
-import com.jeffrey.uberclon.activities.client.MapClientActivity;
+import com.jeffrey.uberclon.adapters.PopupAdapter;
 import com.jeffrey.uberclon.includes.MyToolbar;
+import com.jeffrey.uberclon.models.DriverLocation;
 import com.jeffrey.uberclon.providers.AuthProvider;
+import com.jeffrey.uberclon.providers.ClientBookingProvider;
+import com.jeffrey.uberclon.providers.DriverProvider;
 import com.jeffrey.uberclon.providers.GeofireProvider;
 import com.jeffrey.uberclon.providers.TokenProvider;
+import com.jeffrey.uberclon.utils.CarMoveAnim;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 public class MapClientActivity extends AppCompatActivity implements OnMapReadyCallback {
@@ -75,6 +90,8 @@ public class MapClientActivity extends AppCompatActivity implements OnMapReadyCa
 
     private GeofireProvider mGeofireProvider;
     private TokenProvider mTokenProvider;
+    private ClientBookingProvider mClientBookingProvider;
+    private DriverProvider mDriverProvider;
 
 
     private final static int LOCATION_REQUEST_CODE = 1;
@@ -102,6 +119,20 @@ public class MapClientActivity extends AppCompatActivity implements OnMapReadyCa
     private GoogleMap.OnCameraIdleListener mCameraListener;
 
     private Button mButtonRequestDriver;
+    private ImageView mImageViewChange;
+
+    private boolean mOriginSelect = true;
+
+    private HashMap<String, String> mImagesMarkers = new HashMap<String, String>();
+    private int mCounter = 0;
+
+    SharedPreferences mPref;
+
+    private GoogleApiClient mGoogleApiClient;
+    private final int REQUEST_CHECK_SETTINGS = 0x1;
+
+    private ArrayList<DriverLocation> mDriversLocation = new ArrayList<>();
+
 
 
     LocationCallback mLocationCallback = new LocationCallback() {
@@ -149,6 +180,8 @@ public class MapClientActivity extends AppCompatActivity implements OnMapReadyCa
         mAuthProvider = new AuthProvider();
         mGeofireProvider = new GeofireProvider("active_drivers");
         mTokenProvider = new TokenProvider();
+        mClientBookingProvider = new ClientBookingProvider();
+        mDriverProvider = new DriverProvider();
 
         mFusedLocation = LocationServices.getFusedLocationProviderClient(this);
 
@@ -156,15 +189,33 @@ public class MapClientActivity extends AppCompatActivity implements OnMapReadyCa
         mMapFragment.getMapAsync(this);
 
         mButtonRequestDriver = findViewById(R.id.btnRequestDriver);
+        mImageViewChange = findViewById(R.id.imageViewChange);
 
         if (!Places.isInitialized()) {
             Places.initialize(getApplicationContext(), getResources().getString(R.string.google_maps_key));
         }
 
         mPlaces = Places.createClient(this);
-        instanceAutocompleteDestination();
         instanceAutocompleteOrigin();
-        onCameraMove();
+        instanceAutocompleteDestination();
+
+        mGoogleApiClient = getAPIClientInstance();
+        if(mGoogleApiClient != null){
+            mGoogleApiClient.connect();
+        }
+
+        mPref = getApplicationContext().getSharedPreferences("RideStatus", MODE_PRIVATE);
+        String status = mPref.getString("status", "");
+        String idDriver = mPref.getString("idDriver", "");
+
+        if(status.equals("ride") || status.equals("start")){
+            goToMapDriverBookingActivity(idDriver);
+        }
+        else{
+            onCameraMove();
+            deleteClientBooking();
+            generateToken();
+        }
 
         mButtonRequestDriver.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -172,8 +223,67 @@ public class MapClientActivity extends AppCompatActivity implements OnMapReadyCa
                 requestDriver();
             }
         });
+        mImageViewChange.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(mOriginSelect){
+                    Toast.makeText(MapClientActivity.this, "Estas seleccionando el lugar de destino desde el mapa", Toast.LENGTH_LONG).show();
+                    mOriginSelect = false;
+                }
+                else {
+                    Toast.makeText(MapClientActivity.this, "Estas seleccionando el lugar de recogida desde el mapa", Toast.LENGTH_LONG).show();
+                     mOriginSelect = true;
+                    }
 
-        generateToken();
+            }
+        });
+    }
+
+    private GoogleApiClient getAPIClientInstance() {
+        GoogleApiClient googleApiClient = new GoogleApiClient.Builder(this).addApi(LocationServices.API).build();
+        return  googleApiClient;
+    }
+
+    private void requestGPSSettings() {
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(mLocationRequest);
+        builder.setAlwaysShow(true);
+        final PendingResult<LocationSettingsResult> result = LocationServices.SettingsApi.checkLocationSettings(mGoogleApiClient, builder.build());
+        result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
+            @Override
+            public void onResult(@NonNull LocationSettingsResult locationSettingsResult) {
+                Status status = locationSettingsResult.getStatus();
+
+                if (status.getStatusCode() == LocationSettingsStatusCodes.SUCCESS) {
+                    Toast.makeText(MapClientActivity.this, "El GPS ya esta activado", Toast.LENGTH_SHORT).show();
+                }
+                else if (status.getStatusCode() == LocationSettingsStatusCodes.RESOLUTION_REQUIRED) {
+                    try {
+                        status.startResolutionForResult(MapClientActivity.this, REQUEST_CHECK_SETTINGS);
+                        if (ActivityCompat.checkSelfPermission(MapClientActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MapClientActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                            return;
+                        }
+                        mFusedLocation.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+                        mMap.setMyLocationEnabled(false);
+                    } catch (IntentSender.SendIntentException e) {
+                        Toast.makeText(MapClientActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+
+                }
+                else if (status.getStatusCode() == LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE) {
+                    Toast.makeText(MapClientActivity.this, "La configuracion del GPS tiene algun error o esta disponible", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    private void goToMapDriverBookingActivity(String idDriver) {
+        Intent intent = new Intent(MapClientActivity.this, MapClientBookingActivity.class);
+        intent.putExtra("idDriver",idDriver);
+        startActivity(intent);
+    }
+
+    private void deleteClientBooking() {
+        mClientBookingProvider.delete(mAuthProvider.getId());
     }
 
     private void requestDriver() {
@@ -208,13 +318,27 @@ public class MapClientActivity extends AppCompatActivity implements OnMapReadyCa
             public void onCameraIdle() {
                 try {
                     Geocoder geocoder = new Geocoder(MapClientActivity.this);
-                    mOriginLatLng = mMap.getCameraPosition().target;
-                    List<Address> addressList = geocoder.getFromLocation(mOriginLatLng.latitude, mOriginLatLng.longitude, 1);
-                    String city = addressList.get(0).getLocality();
-                    String country = addressList.get(0).getCountryName();
-                    String address = addressList.get(0).getAddressLine(0);
-                    mOrigin = address + " " + city;
-                    mAutocomplete.setText(address + " " + city);
+
+                    if(mOriginSelect){
+                        mOriginLatLng = mMap.getCameraPosition().target;
+                        List<Address> addressList = geocoder.getFromLocation(mOriginLatLng.latitude, mOriginLatLng.longitude, 1);
+                        String city = addressList.get(0).getLocality();
+                        String country = addressList.get(0).getCountryName();
+                        String address = addressList.get(0).getAddressLine(0);
+                        mOrigin = address + " " + city;
+                        mAutocomplete.setText(address + " " + city);
+                    }
+                    else{
+                        mDestinationLatLng = mMap.getCameraPosition().target;
+                        List<Address> addressList = geocoder.getFromLocation(mDestinationLatLng.latitude, mDestinationLatLng.longitude, 1);
+                        String city = addressList.get(0).getLocality();
+                        String country = addressList.get(0).getCountryName();
+                        String address = addressList.get(0).getAddressLine(0);
+                        mDestination = address + " " + city;
+                        mAutocompleteDestination.setText(address + " " + city);
+                    }
+
+
                 } catch (Exception e) {
                     Log.d("Error: ", "Mensaje error: " + e.getMessage());
                 }
@@ -287,6 +411,33 @@ public class MapClientActivity extends AppCompatActivity implements OnMapReadyCa
                 Marker marker = mMap.addMarker(new MarkerOptions().position(driverLatLng).title("Conductor disponible").icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_location_driver)));
                 marker.setTag(key);
                 mDriversMarkers.add(marker);
+
+                DriverLocation driverLocation = new DriverLocation();
+                driverLocation.setId(key);
+                mDriversLocation.add(driverLocation);
+
+                getDriversInfo();
+                mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+                    @Override
+                    public void onInfoWindowClick(Marker marker) {
+                        if (mOriginLatLng != null && mDestinationLatLng != null) {
+                            Intent intent = new Intent(MapClientActivity.this, DetailRequestActivity.class);
+                            intent.putExtra("origin_lat", mOriginLatLng.latitude);
+                            intent.putExtra("origin_lng", mOriginLatLng.longitude);
+                            intent.putExtra("destination_lat", mDestinationLatLng.latitude);
+                            intent.putExtra("destination_lng", mDestinationLatLng.longitude);
+                            intent.putExtra("origin", mOrigin);
+                            intent.putExtra("destination", mDestination);
+                            intent.putExtra("idDriver", marker.getTag().toString());
+                            intent.putExtra("driver_lat", marker.getPosition().latitude);
+                            intent.putExtra("driver_lng", marker.getPosition().longitude);
+                            startActivity(intent);
+                        }
+                        else {
+                            Toast.makeText(MapClientActivity.this, "Debe seleccionar el lugar de recogida y el destino", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
             }
 
             @Override
@@ -296,6 +447,7 @@ public class MapClientActivity extends AppCompatActivity implements OnMapReadyCa
                         if (marker.getTag().equals(key)) {
                             marker.remove();
                             mDriversMarkers.remove(marker);
+                            mDriversLocation.remove(getPositionDriver(key));
                             return;
                         }
                     }
@@ -308,9 +460,22 @@ public class MapClientActivity extends AppCompatActivity implements OnMapReadyCa
             public void onKeyMoved(String key, GeoLocation location) {
                 // ACTUALIZAR LA POSICION DE CADA CONDUCTOR
                 for (Marker marker : mDriversMarkers) {
+                    LatLng start = new LatLng(location.latitude, location.longitude);
+                    LatLng end = null;
+
+                    int position = getPositionDriver(marker.getTag().toString());
+
                     if (marker.getTag() != null) {
                         if (marker.getTag().equals(key)) {
-                            marker.setPosition(new LatLng(location.latitude, location.longitude));
+                            //marker.setPosition(new LatLng(location.latitude, location.longitude));
+                            if(mDriversLocation.get(position).getLatLng() != null){
+                                end = mDriversLocation.get(position).getLatLng();
+                            }
+                            mDriversLocation.get(position).setLatLng(new LatLng(location.latitude, location.longitude));
+
+                            if(end != null){
+                                CarMoveAnim.carAnim(marker, end, start);
+                            }
                         }
                     }
                 }
@@ -327,6 +492,56 @@ public class MapClientActivity extends AppCompatActivity implements OnMapReadyCa
 
             }
         });
+    }
+
+    private int getPositionDriver(String id){
+        int position = 0;
+
+        for(int i = 0; i < mDriversLocation.size(); i++){
+            if(id.equals(mDriversLocation.get(i).getId())){
+                position = i;
+                break;
+            }
+        }
+        return position;
+    }
+
+    private void getDriversInfo() {
+        mCounter = 0;
+
+        for (final Marker marker: mDriversMarkers) {
+            mDriverProvider.getDriver(marker.getTag().toString()).addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    mCounter = mCounter + 1;
+
+                    if (snapshot.exists()) {
+                        if (snapshot.hasChild("name")) {
+                            String name = snapshot.child("name").getValue().toString();
+                            marker.setTitle(name);
+                        }
+                        if (snapshot.hasChild("image")) {
+                            String image = snapshot.child("image").getValue().toString();
+                            mImagesMarkers.put(marker.getTag().toString(), image);
+                        }
+                        else {
+                            mImagesMarkers.put(marker.getTag().toString(), null);
+                        }
+                    }
+
+                    // TERMINO DE TRAER TODA LA INFORMACION DE LOS CONDUCTORES
+                    if (mCounter == mDriversMarkers.size()) {
+                        mMap.setInfoWindowAdapter(new PopupAdapter(MapClientActivity.this, getLayoutInflater(), mImagesMarkers));
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
+        }
+
     }
     /*private void getActiveDrivers() {
         mGeofireProvider.getActiveDrivers(mCurrentLatLng).addGeoQueryEventListener(new GeoQueryEventListener() {
@@ -399,7 +614,8 @@ public class MapClientActivity extends AppCompatActivity implements OnMapReadyCa
                         mFusedLocation.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
                         mMap.setMyLocationEnabled(true);
                     } else {
-                        showAlertDialogNOGPS();
+                        //showAlertDialogNOGPS();
+                        requestGPSSettings();
                     }
                 } else {
                     checkLocationPermissions();
@@ -455,7 +671,8 @@ public class MapClientActivity extends AppCompatActivity implements OnMapReadyCa
                     mMap.setMyLocationEnabled(true);
                 }
                 else {
-                    showAlertDialogNOGPS();
+                    //showAlertDialogNOGPS();
+                    requestGPSSettings();
                 }
             }
             else {
@@ -467,7 +684,8 @@ public class MapClientActivity extends AppCompatActivity implements OnMapReadyCa
                 mMap.setMyLocationEnabled(true);
             }
             else {
-                showAlertDialogNOGPS();
+                //showAlertDialogNOGPS();
+                requestGPSSettings();
             }
         }
     }

@@ -1,10 +1,11 @@
-package com.jeffrey.uberclon.activities.client;
+package com.jeffrey.uberclon.activities;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -33,6 +34,7 @@ import com.jeffrey.uberclon.providers.TokenProvider;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -66,6 +68,32 @@ public class RequestDriverActivity extends AppCompatActivity {
     private GoogleApiProvider mGoogleApiProvider;
 
     private ValueEventListener mListener;
+
+    private ArrayList<String> mDriversNotAccept = new ArrayList<>();
+
+    private int mTimeLimit = 0;
+    private Handler mHandler = new Handler();
+    private boolean mIsFinishSearch = false;
+    private boolean mIsLookingFor = false;
+
+    Runnable mRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (mTimeLimit < 35) {
+                mTimeLimit++;
+                mHandler.postDelayed(mRunnable, 1000);
+            }
+            else {
+                if (mIdDriverFound != null) {
+                    if (!mIdDriverFound.equals("")) {
+                        mClientBookingProvider.updateStatus(mAuthProvider.getId(), "cancel");
+                        restartRequest();
+                    }
+                }
+                mHandler.removeCallbacks(mRunnable);
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -115,18 +143,136 @@ public class RequestDriverActivity extends AppCompatActivity {
 
     }
 
+    /**
+     * RETORNAR SI EL ID DEL CODNDUCTOR ENCONTRADO YA CANCELO EL VIAJE
+     * @param idDriver
+     * @return
+     */
+    private boolean isDriverCancel(String idDriver) {
+        for (String id: mDriversNotAccept) {
+            if (id.equals(idDriver)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void checkStatusClientBooking() {
+        mListener = mClientBookingProvider.getStatus(mAuthProvider.getId()).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+
+                    String status = dataSnapshot.getValue().toString();
+                    if (status.equals("accept")) {
+                        Intent intent = new Intent(RequestDriverActivity.this, MapClientBookingActivity.class);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent);
+                        finish();
+                    } else if (status.equals("cancel")) {
+
+                        if (mIsLookingFor) {
+                            restartRequest();
+                        }
+
+                        Toast.makeText(RequestDriverActivity.this, "El conductor no acepto el viaje", Toast.LENGTH_SHORT).show();
+                        /*
+                        Intent intent = new Intent(RequestDriverActivity.this, MapClientActivity.class);
+                        startActivity(intent);
+                        finish();
+
+                         */
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+    }
+
+    private void restartRequest() {
+        if (mHandler != null) {
+            mHandler.removeCallbacks(mRunnable);
+        }
+        mTimeLimit = 0;
+        mIsLookingFor = false;
+        mDriversNotAccept.add(mIdDriverFound);
+        mDriverFound = false;
+        mIdDriverFound = "";
+        mRadius = 0.1f;
+        mIsFinishSearch = false;
+        mTextViewLookingFor.setText("BUSCANDO CONDUCTOR");
+
+        getClosestDriver();
+    }
+
     private void getClosestDriver() {
         mGeofireProvider.getActiveDrivers(mOriginLatLng, mRadius).addGeoQueryEventListener(new GeoQueryEventListener() {
             @Override
-            public void onKeyEntered(String key, GeoLocation location) {
+            public void onKeyEntered(final String key, final GeoLocation location) {
+                // INGRESA CUANDO ENCUENTRA UN CONDUCTOR EN UN RADIO DE BUSQUEDA
+                if (!mDriverFound && !isDriverCancel(key) && !mIsFinishSearch) {
 
-                if (!mDriverFound) {
-                    mDriverFound = true;
-                    mIdDriverFound = key;
-                    mDriverFoundLatLng = new LatLng(location.latitude, location.longitude);
-                    mTextViewLookingFor.setText("CONDUCTOR ENCONTRADO\nESPERANDO RESPUESTA");
-                    createClientBooking();
-                    Log.d("DRIVER", "ID: " + mIdDriverFound);
+                    // ESTA BUSCANDO UN CONDUCTOR QUE AUN NO RECHAZADO LA SOLICTUD
+                    mIsLookingFor = true;
+                    mClientBookingProvider.getClientBookingByDriver(key).addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            boolean isDriverNotification = false;
+
+                            if(!mIsFinishSearch) {
+                                for (DataSnapshot d: snapshot.getChildren()) {
+
+                                    if (d.exists()) {
+                                        if (d.hasChild("status")) {
+                                            String status = d.child("status").getValue().toString();
+                                            if (status.equals("create") || status.equals("accept")) {
+                                                isDriverNotification = true;
+                                                break;
+                                            }
+
+                                        }
+                                        else {
+                                            Log.d("STATUS", "No existe el estado Estado child");
+                                        }
+                                    }
+                                    else {
+                                        Log.d("STATUS", "No existe el estado Estado EXIST");
+                                    }
+                                }
+
+                                if (!isDriverNotification) {
+                                    mDriverFound = true;
+                                    mIdDriverFound = key;
+
+                                    mTimeLimit = 0;
+                                    mHandler.postDelayed(mRunnable, 1000);
+
+                                    mDriverFoundLatLng = new LatLng(location.latitude, location.longitude);
+                                    mTextViewLookingFor.setText("CONDUCTOR ENCONTRADO\nESPERANDO RESPUESTA");
+                                    createClientBooking();
+
+                                    Log.d("DRIVER", "ID: " + mIdDriverFound);
+                                }
+                                else {
+                                    mIsLookingFor = false;
+                                    getClosestDriver();
+                                }
+                            }
+
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+
+                        }
+                    });
+
+
                 }
 
             }
@@ -144,15 +290,27 @@ public class RequestDriverActivity extends AppCompatActivity {
             @Override
             public void onGeoQueryReady() {
                 // INGRESA CUANDO TERMINA LA BUSQUEDA DEL CONDUCTOR EN UN RADIO DE 0.1 KM
-                if (!mDriverFound) {
+                if (!mDriverFound && !mIsLookingFor) {
                     mRadius = mRadius + 0.1f;
+
                     // NO ENCONTRO NINGUN CONDUCTOR
                     if (mRadius > 5) {
+
+                        // TERMINAR TOTALMENTE LA BUSQUEDA YA QUE NO SE ENCONTRO NINGUN CONDCUTOR
+
+                        if (mListener != null) {
+                            mClientBookingProvider.getStatus(mAuthProvider.getId()).removeEventListener(mListener);
+                        }
                         mTextViewLookingFor.setText("NO SE ENCONTRO UN CONDUCTOR");
                         Toast.makeText(RequestDriverActivity.this, "NO SE ENCONTRO UN CONDUCTOR", Toast.LENGTH_SHORT).show();
+                        mIsFinishSearch = true;
+                        Intent intent = new Intent(RequestDriverActivity.this, MapClientActivity.class);
+                        startActivity(intent);
+                        finish();
                         return;
                     }
                     else {
+                        Log.d("REQUEST", "ENTRO GET CLOSETS");
                         getClosestDriver();
                     }
                 }
@@ -200,53 +358,71 @@ public class RequestDriverActivity extends AppCompatActivity {
     }
 
     private void sendNotificationCancel() {
-        mTokenProvider.getToken(mIdDriverFound).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    String token = dataSnapshot.child("token").getValue().toString();
-                    Map<String, String> map = new HashMap<>();
-                    map.put("title", "VIAJE CANCELADO");
-                    map.put("body",
-                            "El cliente cancelo la solicitud"
-                    );
-                    FCMBody fcmBody = new FCMBody(token, "high", "4500s", map);
-                    mNotificationProvider.sendNotification(fcmBody).enqueue(new Callback<FCMResponse>() {
-                        @Override
-                        public void onResponse(Call<FCMResponse> call, Response<FCMResponse> response) {
-                            if (response.body() != null) {
-                                if (response.body().getSuccess() == 1) {
-                                    Toast.makeText(RequestDriverActivity.this, "La solicitud se cancelo correctamente", Toast.LENGTH_SHORT).show();
-                                    Intent intent = new Intent(RequestDriverActivity.this, MapClientActivity.class);
-                                    startActivity(intent);
-                                    finish();
-                                    //Toast.makeText(RequestDriverActivity.this, "La notificacion se ha enviado correctamente", Toast.LENGTH_SHORT).show();
+
+        if (mIdDriverFound != null) {
+            mTokenProvider.getToken(mIdDriverFound).addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    if (dataSnapshot.exists()) {
+
+                        if (dataSnapshot.hasChild("token")) {
+                            String token = dataSnapshot.child("token").getValue().toString();
+                            Map<String, String> map = new HashMap<>();
+                            map.put("title", "VIAJE CANCELADO");
+                            map.put("body",
+                                    "El cliente cancelo la solicitud"
+                            );
+                            FCMBody fcmBody = new FCMBody(token, "high", "4500s", map);
+                            mNotificationProvider.sendNotification(fcmBody).enqueue(new Callback<FCMResponse>() {
+                                @Override
+                                public void onResponse(Call<FCMResponse> call, Response<FCMResponse> response) {
+                                    if (response.body() != null) {
+                                        if (response.body().getSuccess() == 1) {
+                                            Toast.makeText(RequestDriverActivity.this, "La solicitud se cancelo correctamente", Toast.LENGTH_SHORT).show();
+                                            Intent intent = new Intent(RequestDriverActivity.this, MapClientActivity.class);
+                                            startActivity(intent);
+                                            finish();
+                                            //Toast.makeText(RequestDriverActivity.this, "La notificacion se ha enviado correctamente", Toast.LENGTH_SHORT).show();
+                                        }
+                                        else {
+                                            Toast.makeText(RequestDriverActivity.this, "No se pudo enviar la notificacion", Toast.LENGTH_SHORT).show();
+                                        }
+                                    }
+                                    else {
+                                        Toast.makeText(RequestDriverActivity.this, "No se pudo enviar la notificacion", Toast.LENGTH_SHORT).show();
+                                    }
                                 }
-                                else {
-                                    Toast.makeText(RequestDriverActivity.this, "No se pudo enviar la notificacion", Toast.LENGTH_SHORT).show();
+
+                                @Override
+                                public void onFailure(Call<FCMResponse> call, Throwable t) {
+                                    Log.d("Error", "Error " + t.getMessage());
                                 }
-                            }
-                            else {
-                                Toast.makeText(RequestDriverActivity.this, "No se pudo enviar la notificacion", Toast.LENGTH_SHORT).show();
-                            }
+                            });
                         }
-
-                        @Override
-                        public void onFailure(Call<FCMResponse> call, Throwable t) {
-                            Log.d("Error", "Error " + t.getMessage());
+                        else {
+                            Toast.makeText(RequestDriverActivity.this, "La solicitud se cancelo correctamente", Toast.LENGTH_SHORT).show();
+                            Intent intent = new Intent(RequestDriverActivity.this, MapClientActivity.class);
+                            startActivity(intent);
+                            finish();
                         }
-                    });
+                    }
+                    else {
+                        Toast.makeText(RequestDriverActivity.this, "No se pudo enviar la notificacion porque el conductor no tiene un token de sesion", Toast.LENGTH_SHORT).show();
+                    }
                 }
-                else {
-                    Toast.makeText(RequestDriverActivity.this, "No se pudo enviar la notificacion porque el conductor no tiene un token de sesion", Toast.LENGTH_SHORT).show();
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
                 }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
+            });
+        }
+        else {
+            Toast.makeText(RequestDriverActivity.this, "La solicitud se cancelo correctamente", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(RequestDriverActivity.this, MapClientActivity.class);
+            startActivity(intent);
+            finish();
+        }
 
     }
 
@@ -268,6 +444,7 @@ public class RequestDriverActivity extends AppCompatActivity {
                     map.put("destination", mExtraDestination);
                     map.put("min", time);
                     map.put("distance", km);
+                    map.put("searchById", "false"); //PROBANDO...
                     FCMBody fcmBody = new FCMBody(token, "high", "4500s", map);
                     mNotificationProvider.sendNotification(fcmBody).enqueue(new Callback<FCMResponse>() {
                         @Override
@@ -324,33 +501,7 @@ public class RequestDriverActivity extends AppCompatActivity {
 
     }
 
-    private void checkStatusClientBooking() {
-        mListener = mClientBookingProvider.getStatus(mAuthProvider.getId()).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists()) {
 
-                    String status = dataSnapshot.getValue().toString();
-                    if (status.equals("accept")) {
-                        Intent intent = new Intent(RequestDriverActivity.this, MapClientBookingActivity.class);
-                        startActivity(intent);
-                        finish();
-                    } else if (status.equals("cancel")) {
-                        Toast.makeText(RequestDriverActivity.this, "El conductor no acepto el viaje", Toast.LENGTH_SHORT).show();
-                        Intent intent = new Intent(RequestDriverActivity.this, MapClientActivity.class);
-                        startActivity(intent);
-                        finish();
-                    }
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-
-    }
 
     @Override
     protected void onDestroy() {
@@ -358,5 +509,12 @@ public class RequestDriverActivity extends AppCompatActivity {
         if (mListener != null) {
             mClientBookingProvider.getStatus(mAuthProvider.getId()).removeEventListener(mListener);
         }
+
+        if (mHandler != null) {
+            mHandler.removeCallbacks(mRunnable);
+        }
+
+        mIsFinishSearch = true;
     }
+
 }

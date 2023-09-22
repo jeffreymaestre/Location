@@ -19,10 +19,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.jeffrey.uberclon.R;
-import com.jeffrey.uberclon.activities.client.MapClientActivity;
-import com.jeffrey.uberclon.activities.client.RegisterActivity;
-import com.jeffrey.uberclon.activities.driver.MapDriverActivity;
-import com.jeffrey.uberclon.includes.MyToolbar;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 import dmax.dialog.SpotsDialog;
@@ -39,8 +35,6 @@ public class LoginActivity extends AppCompatActivity {
     DatabaseReference mDatabase;
 
     AlertDialog mDialog;
-
-    SharedPreferences mPref;
 
 
     @Override
@@ -59,7 +53,6 @@ public class LoginActivity extends AppCompatActivity {
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
         mDialog = new SpotsDialog.Builder().setContext(LoginActivity.this).setMessage("Espere un momento").build();
-        mPref = getApplicationContext().getSharedPreferences("typeUser", MODE_PRIVATE);
 
 
         mButtonLogin.setOnClickListener(new View.OnClickListener() {
@@ -88,17 +81,9 @@ public class LoginActivity extends AppCompatActivity {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
-                            String user = mPref.getString("user", "");
-                            if (user.equals("client")) {
-                                Intent intent = new Intent(LoginActivity.this, MapClientActivity.class);
-                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                                startActivity(intent);
-                            }
-                            else {
-                                Intent intent = new Intent(LoginActivity.this, MapDriverActivity.class);
-                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                                startActivity(intent);
-                            }
+                            Intent intent = new Intent(LoginActivity.this, MapClientActivity.class);
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                            startActivity(intent);
                         }
                         else {
                             Toast.makeText(LoginActivity.this, "La contraseña o el password son incorrectos", Toast.LENGTH_SHORT).show();

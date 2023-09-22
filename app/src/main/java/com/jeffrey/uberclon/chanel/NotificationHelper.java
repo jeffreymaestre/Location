@@ -17,7 +17,7 @@ import com.jeffrey.uberclon.R;
 
 public class NotificationHelper extends ContextWrapper {
 
-    private static final String CHANNEL_ID = "com.optic.uberclone";
+    private static final String CHANNEL_ID = "com.jeffrey.uberclon";
     private static final String CHANNEL_NAME = "UberClone";
 
     private NotificationManager manager;

@@ -1,4 +1,4 @@
-package com.jeffrey.uberclon.activities.client;
+package com.jeffrey.uberclon.activities;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -24,7 +24,6 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.UploadTask;
 import com.jeffrey.uberclon.R;
-import com.jeffrey.uberclon.includes.MyToolbar;
 import com.jeffrey.uberclon.models.Client;
 import com.jeffrey.uberclon.providers.AuthProvider;
 import com.jeffrey.uberclon.providers.ClientProvider;

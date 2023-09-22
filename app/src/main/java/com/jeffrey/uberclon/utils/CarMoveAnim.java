@@ -1,4 +1,4 @@
-package com.jeffrey.uberclonconductor.utils;
+package com.jeffrey.uberclon.utils;
 
 import android.animation.ValueAnimator;
 import android.util.Log;

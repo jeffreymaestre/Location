@@ -1,4 +1,4 @@
-package com.jeffrey.uberclon.activities.client;
+package com.jeffrey.uberclon.activities;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;

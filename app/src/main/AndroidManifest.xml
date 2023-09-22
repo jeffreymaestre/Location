@@ -10,38 +10,23 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/icono"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name=".activities.driver.HistoryBookingDetailDriverActivity"></activity>
-        <activity android:name=".activities.client.HistoryBookingDetailClientActivity" />
+        <activity android:name=".activities.RequestDriverByIdActivity"></activity>
+        <activity android:name=".activities.PhoneAuthActivity" />
+        <activity android:name=".activities.HistoryBookingDetailClientActivity" />
         <activity
-            android:name=".activities.driver.HistoryBookingDriverActivity"
-            android:parentActivityName=".activities.driver.MapDriverActivity" />
+            android:name=".activities.HistoryBookingClientActivity"
+            android:parentActivityName=".activities.MapClientActivity" />
         <activity
-            android:name=".activities.client.HistoryBookingClientActivity"
-            android:parentActivityName=".activities.client.MapClientActivity" />
-        <activity
-            android:name=".activities.driver.UpdateProfileDriverActivity"
-            android:parentActivityName=".activities.driver.MapDriverActivity" />
-        <activity
-            android:name=".activities.client.UpdateProfileActivity"
-            android:parentActivityName=".activities.client.MapClientActivity" />
-        <activity android:name=".activities.driver.NotificationBookingActivity" />
-        <activity android:name=".activities.client.CalificationDriverActivity" />
-        <activity android:name=".activities.driver.CalificationClientActivity" />
-        <activity android:name=".activities.client.MapClientBookingActivity" />
-        <activity android:name=".activities.driver.MapDriverBookingActivity" />
-
-        <receiver
-            android:name=".receiver.AcceptReceiver"
-            android:enabled="true" />
-        <receiver
-            android:name=".receiver.CancelReceiver"
-            android:enabled="true" />
+            android:name=".activities.UpdateProfileActivity"
+            android:parentActivityName=".activities.MapClientActivity" />
+        <activity android:name=".activities.CalificationDriverActivity" />
+        <activity android:name=".activities.MapClientBookingActivity" />
 
         <service android:name=".services.MyFirebaseMessagingClient">
             <intent-filter>
@@ -49,23 +34,20 @@
             </intent-filter>
         </service>
 
-        <activity android:name=".activities.client.RequestDriverActivity" />
+        <activity android:name=".activities.RequestDriverActivity" />
         <activity
-            android:name=".activities.client.DetailRequestActivity"
-            android:parentActivityName=".activities.client.MapClientActivity" />
-        <activity android:name=".activities.driver.MapDriverActivity" />
-        <activity android:name=".activities.client.MapClientActivity" />
-        <activity android:name=".activities.driver.RegisterDriverActivity" />
+            android:name=".activities.DetailRequestActivity"
+            android:parentActivityName=".activities.MapClientActivity" />
+        <activity android:name=".activities.MapClientActivity" />
         <activity
             android:name=".activities.LoginActivity"
-            android:parentActivityName=".activities.SelectOptionAutActivity" />
-        <activity
-            android:name=".activities.client.RegisterActivity"
-            android:parentActivityName=".activities.SelectOptionAutActivity" />
-        <activity
-            android:name=".activities.SelectOptionAutActivity"
             android:parentActivityName=".activities.MainActivity" />
-        <activity android:name=".activities.MainActivity">
+        <activity
+            android:name=".activities.RegisterActivity"
+            android:parentActivityName=".activities.MainActivity" />
+        <activity
+            android:name=".activities.MainActivity"
+            android:theme="@style/SplashTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

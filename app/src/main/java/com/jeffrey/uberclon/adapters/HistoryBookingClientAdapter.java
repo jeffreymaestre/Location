@@ -17,7 +17,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.jeffrey.uberclon.R;
-import com.jeffrey.uberclon.activities.client.HistoryBookingDetailClientActivity;
+import com.jeffrey.uberclon.activities.HistoryBookingDetailClientActivity;
 import com.jeffrey.uberclon.models.HistoryBooking;
 import com.jeffrey.uberclon.providers.DriverProvider;
 import com.squareup.picasso.Picasso;

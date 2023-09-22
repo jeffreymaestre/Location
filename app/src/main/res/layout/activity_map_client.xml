@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context=".activities.client.MapClientActivity">
+    tools:context=".activities.MapClientActivity">
 
 
     <include layout="@layout/action_bar_toollbar"></include>
@@ -64,6 +64,15 @@
         android:layout_height="60dp"
         android:src="@drawable/icon_my_location"
         android:layout_gravity="center"/>
+
+    <ImageView
+        android:id="@+id/imageViewChange"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/ic_change"
+        android:layout_gravity="left"
+        android:layout_marginTop="200dp"
+        android:layout_marginLeft="15dp"/>
 
     <Button
         android:id="@+id/btnRequestDriver"

@@ -1,4 +1,4 @@
-package com.jeffrey.uberclon.activities.client;
+package com.jeffrey.uberclon.activities;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -26,7 +26,6 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.jeffrey.uberclon.R;
-import com.jeffrey.uberclon.includes.MyToolbar;
 import com.jeffrey.uberclon.models.Info;
 import com.jeffrey.uberclon.providers.GoogleApiProvider;
 import com.jeffrey.uberclon.providers.InfoProvider;
@@ -50,8 +49,11 @@ public class DetailRequestActivity extends AppCompatActivity implements OnMapRea
     private double mExtraOriginLng;
     private double mExtraDestinationLat;
     private double mExtraDestinationLng;
+    private double mExtraDriverLat;
+    private double mExtraDriverLng;
     private String mExtraOrigin;
     private String mExtraDestination;
+    private String mExtraDriverId;
 
     private LatLng mOriginLatLng;
     private LatLng mDestinationLatLng;
@@ -86,6 +88,9 @@ public class DetailRequestActivity extends AppCompatActivity implements OnMapRea
         mExtraDestinationLng = getIntent().getDoubleExtra("destination_lng", 0);
         mExtraOrigin = getIntent().getStringExtra("origin");
         mExtraDestination = getIntent().getStringExtra("destination");
+        mExtraDriverId = getIntent().getStringExtra("idDriver");
+        mExtraDriverLat = getIntent().getDoubleExtra("driver_lat", 0);
+        mExtraDriverLng = getIntent().getDoubleExtra("driver_lng", 0);
 
         mOriginLatLng = new LatLng(mExtraOriginLat, mExtraOriginLng);
         mDestinationLatLng = new LatLng(mExtraDestinationLat, mExtraDestinationLng);
@@ -107,7 +112,14 @@ public class DetailRequestActivity extends AppCompatActivity implements OnMapRea
         mButtonRequest.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                goToRequestDriver();
+                //UQEREMOS ENVIARLÑE LA NOTIFICACION A UN CONDUCTOR ESPECIFICO
+                if(mExtraDriverId != null){
+                    goToRequestDriverById();
+                }
+                else{
+                    goToRequestDriver();
+                }
+
             }
         });
         mCircleImageBack.setOnClickListener(new View.OnClickListener() {
@@ -128,6 +140,22 @@ public class DetailRequestActivity extends AppCompatActivity implements OnMapRea
         intent.putExtra("destination", mExtraDestination);
         intent.putExtra("destination_lat", mDestinationLatLng.latitude);
         intent.putExtra("destination_lng", mDestinationLatLng.longitude);
+
+        startActivity(intent);
+        finish();
+    }
+
+    private void goToRequestDriverById() {
+        Intent intent = new Intent(DetailRequestActivity.this, RequestDriverByIdActivity.class);
+        intent.putExtra("origin_lat", mOriginLatLng.latitude);
+        intent.putExtra("origin_lng", mOriginLatLng.longitude);
+        intent.putExtra("origin", mExtraOrigin);
+        intent.putExtra("destination", mExtraDestination);
+        intent.putExtra("destination_lat", mDestinationLatLng.latitude);
+        intent.putExtra("destination_lng", mDestinationLatLng.longitude);
+        intent.putExtra("idDriver", mExtraDriverId);
+        intent.putExtra("driver_lat", mExtraDriverLat);
+        intent.putExtra("driver_lng", mExtraDriverLng);
 
         startActivity(intent);
         finish();
@@ -192,9 +220,10 @@ public class DetailRequestActivity extends AppCompatActivity implements OnMapRea
                     double totalDistance = distanceValue * info.getKm();
                     double totalDuration = durationValue * info.getMin();
                     //double total = totalDistance + totalDuration;
-                    double total = 3000+(0.25 * totalDistance);
-                    double minTotal = total - 0.5;
-                    double maxTotal = total + 0.5;
+                    //double total = 3000+(0.25 * totalDistance);
+                    double total = info.getKm();
+                    //ouble minTotal = total - 0.5;
+                    //double maxTotal = total + 0.5;
                     mTextViewPrice.setText("$" + total);
                     //mTextViewPrice.setText("$" + minTotal + " - " + maxTotal);
                 }

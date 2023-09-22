@@ -3,6 +3,7 @@ package com.jeffrey.uberclon.providers;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.jeffrey.uberclon.models.ClientBooking;
 
 import java.util.HashMap;
@@ -47,6 +48,10 @@ public class ClientBookingProvider {
     public DatabaseReference getClientBooking(String idClientBooking) {
         return mDatabase.child(idClientBooking);
     }
+    public Query getClientBookingByDriver(String idDriver) {
+        return mDatabase.orderByChild("idDriver").equalTo(idDriver);
+    }
+
 
     public Task<Void> delete(String idClientBooking) {
         return mDatabase.child(idClientBooking).removeValue();

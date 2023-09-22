@@ -3,68 +3,67 @@
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
 
+import com.hbb20.CountryCodePicker;
 import com.jeffrey.uberclon.R;
-import com.jeffrey.uberclon.activities.driver.RegisterDriverActivity;
-import com.jeffrey.uberclon.includes.MyToolbar;
+import com.jeffrey.uberclon.providers.AuthProvider;
 
 
- public class SelectOptionAutActivity extends AppCompatActivity {
-
+ public class MainActivity extends AppCompatActivity {
 
      Button mButtonGoToLogin;
-     Button mButtonGoToRegister;
-     SharedPreferences mPref;
+     CountryCodePicker mCountryCode;
+     EditText mEditTextPhone;
 
+     AuthProvider mAuthProvider;
 
      @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_select_option_aut);
+     protected void onCreate(Bundle savedInstanceState) {
+         setTheme(R.style.AppTheme);
+         super.onCreate(savedInstanceState);
+         setContentView(R.layout.activity_main);
 
-        MyToolbar.show(this, "Seleccionar opcion", true);
-        mPref = getApplicationContext().getSharedPreferences("typeUser", MODE_PRIVATE);
+         mAuthProvider = new AuthProvider();
 
+         mCountryCode = findViewById(R.id.ccp);
+         mEditTextPhone = findViewById(R.id.editTextPhone);
 
-        mButtonGoToLogin = findViewById(R.id.btnGoToLogin);
-        mButtonGoToRegister = findViewById(R.id.btnGoToRegister);
-        mButtonGoToLogin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                goToLogin();
-            }
-        });
-        mButtonGoToRegister.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                goToRegister();
-            }
-        });
-    }
+         mButtonGoToLogin    = findViewById(R.id.btnGoToLogin);
+         mButtonGoToLogin.setOnClickListener(new View.OnClickListener() {
+             @Override
+             public void onClick(View view) {
+                 goToLogin();
+             }
+         });
 
-    public void goToLogin(){
+     }
 
-        Intent intent= new Intent(SelectOptionAutActivity.this, LoginActivity.class);
-        startActivity(intent);
+     public void goToLogin() {
+         String code = mCountryCode.getSelectedCountryCodeWithPlus();
+         String phone = mEditTextPhone.getText().toString();
 
-    }
-
-     public void goToRegister(){
-
-         String typeUser = mPref.getString("user", "");
-         if (typeUser.equals("client")){
-
-             Intent intent= new Intent(SelectOptionAutActivity.this, RegisterActivity.class);
+         if (!phone.equals("")) {
+             Intent intent = new Intent(MainActivity.this, PhoneAuthActivity.class);
+             intent.putExtra("phone", code + phone);
              startActivity(intent);
          }
-            else{
-             Intent intent= new Intent(SelectOptionAutActivity.this, RegisterDriverActivity.class);
-             startActivity(intent);
+         else {
+             Toast.makeText(this, "Debes ingresar el telefono", Toast.LENGTH_SHORT).show();
          }
 
      }
-}
+
+     @Override
+     protected void onStart() {
+         super.onStart();
+         if (mAuthProvider.existSession()) {
+             Intent intent = new Intent(MainActivity.this, MapClientActivity.class);
+             startActivity(intent);
+         }
+     }
+ }

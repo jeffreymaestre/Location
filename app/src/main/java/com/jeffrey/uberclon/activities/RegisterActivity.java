@@ -1,12 +1,10 @@
-package com.jeffrey.uberclon.activities.client;
+package com.jeffrey.uberclon.activities;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 
 import android.app.AlertDialog;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -17,23 +15,15 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.jeffrey.uberclon.R;
-import com.jeffrey.uberclon.activities.driver.MapDriverActivity;
-import com.jeffrey.uberclon.activities.driver.RegisterDriverActivity;
 import com.jeffrey.uberclon.includes.MyToolbar;
 import com.jeffrey.uberclon.models.Client;
-import com.jeffrey.uberclon.models.User;
 import com.jeffrey.uberclon.providers.AuthProvider;
 import com.jeffrey.uberclon.providers.ClientProvider;
 
 import dmax.dialog.SpotsDialog;
 
 public class RegisterActivity extends AppCompatActivity {
-
-
-
     AuthProvider mAuthProvider;
     ClientProvider mClientProvider;
 
@@ -41,7 +31,6 @@ public class RegisterActivity extends AppCompatActivity {
     Button mButtonRegister;
     TextInputEditText mTextInputEmail;
     TextInputEditText mTextInputName;
-    TextInputEditText mTextInputPassword;
 
     AlertDialog mDialog;
 
@@ -49,7 +38,7 @@ public class RegisterActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
-        MyToolbar.show(this, "Registro de usuario", true);
+        MyToolbar.show(this, "Registro de usuario", false);
 
         mAuthProvider = new AuthProvider();
         mClientProvider = new ClientProvider();
@@ -57,10 +46,9 @@ public class RegisterActivity extends AppCompatActivity {
         mDialog = new SpotsDialog.Builder().setContext(RegisterActivity.this).setMessage("Espere un momento").build();
 
 
-        mButtonRegister = findViewById(R.id.btnRegister);
-        mTextInputEmail = findViewById(R.id.textInputEmail);
-        mTextInputName = findViewById(R.id.textInputName);
-        mTextInputPassword = findViewById(R.id.textInputPassword);
+        mButtonRegister    = findViewById(R.id.btnRegister);
+        mTextInputEmail    = findViewById(R.id.textInputEmail);
+        mTextInputName     = findViewById(R.id.textInputName);
 
         mButtonRegister.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -73,16 +61,14 @@ public class RegisterActivity extends AppCompatActivity {
     void clickRegister() {
         final String name = mTextInputName.getText().toString();
         final String email = mTextInputEmail.getText().toString();
-        final String password = mTextInputPassword.getText().toString();
 
-        if (!name.isEmpty() && !email.isEmpty() && !password.isEmpty()) {
-            if (password.length() >= 6) {
-                mDialog.show();
-                register(name, email, password);
-            }
-            else {
-                Toast.makeText(this, "La contraseÃ±a debe tener al menos 6 caracteres", Toast.LENGTH_SHORT).show();
-            }
+        if (!name.isEmpty() && !email.isEmpty()) {
+            mDialog.show();
+            Client client = new Client();
+            client.setId(mAuthProvider.getId());
+            client.setEmail(email);
+            client.setName(name);
+            create(client);
         }
         else {
             Toast.makeText(this, "Ingrese todos los campos", Toast.LENGTH_SHORT).show();
@@ -96,8 +82,8 @@ public class RegisterActivity extends AppCompatActivity {
                 mDialog.hide();
                 if (task.isSuccessful()) {
                     String id = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                    Client client = new Client(id, name, email);
-                    create(client);
+
+
                 }
                 else {
                     Toast.makeText(RegisterActivity.this, "No se pudo registrar el usuario", Toast.LENGTH_SHORT).show();
@@ -122,12 +108,14 @@ public class RegisterActivity extends AppCompatActivity {
         });
     }
 
+
     /*
     void saveUser(String id, String name, String email) {
         String selectedUser = mPref.getString("user", "");
         User user = new User();
         user.setEmail(email);
         user.setName(name);
+
 
         if (selectedUser.equals("driver")) {
             mDatabase.child("Users").child("Drivers").child(id).setValue(user).addOnCompleteListener(new OnCompleteListener<Void>() {
@@ -157,6 +145,4 @@ public class RegisterActivity extends AppCompatActivity {
         }
     }
     */
-
-
 }

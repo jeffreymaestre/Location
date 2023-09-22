@@ -5,30 +5,18 @@ public class Client {
     String name;
     String email;
     String image;
+    String phone;
 
     public Client() {
 
     }
 
-    public Client(String id, String name, String email) {
-        this.id = id;
-        this.name = name;
-        this.email = email;
-    }
-
-    public Client(String id, String name, String email, String image) {
+    public Client(String id, String name, String email, String image, String phone) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.image = image;
-    }
-
-    public String getImage() {
-        return image;
-    }
-
-    public void setImage(String image) {
-        this.image = image;
+        this.phone = phone;
     }
 
     public String getId() {
@@ -53,5 +41,21 @@ public class Client {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 }

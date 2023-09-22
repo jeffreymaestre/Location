@@ -188,7 +188,7 @@
             android:text="RECHAZAR"
             android:layout_weight="1"
             android:background="@drawable/rounded_botton"
-            android:backgroundTint="#595959"
+            android:backgroundTint="@color/colorBlueLight"
             android:textColor="@color/colorWhite"
             android:layout_marginLeft="5dp"/>
 

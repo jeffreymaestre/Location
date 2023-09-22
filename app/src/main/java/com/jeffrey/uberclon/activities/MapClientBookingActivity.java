@@ -1,4 +1,4 @@
-package com.jeffrey.uberclon.activities.client;
+package com.jeffrey.uberclon.activities;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -6,12 +6,14 @@ import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -26,7 +28,6 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.SquareCap;
 import com.google.android.libraries.places.api.Places;
-import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
@@ -37,20 +38,18 @@ import com.jeffrey.uberclon.providers.DriverProvider;
 import com.jeffrey.uberclon.providers.GeofireProvider;
 import com.jeffrey.uberclon.providers.GoogleApiProvider;
 import com.jeffrey.uberclon.providers.TokenProvider;
+import com.jeffrey.uberclon.utils.CarMoveAnim;
 import com.jeffrey.uberclon.utils.DecodePoints;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-
-import static java.sql.DriverManager.getDriver;
 
 public class MapClientBookingActivity extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -91,6 +90,12 @@ public class MapClientBookingActivity extends AppCompatActivity implements OnMap
     private String mIdDriver;
     private ValueEventListener mListenerStatus;
 
+    SharedPreferences mPref;
+    SharedPreferences.Editor mEditor;
+
+    LatLng mStartLatLng;
+    LatLng mEndLatLng;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -118,8 +123,18 @@ public class MapClientBookingActivity extends AppCompatActivity implements OnMap
         mImageViewBooking = findViewById(R.id.imageViewClientBooking);
 
 
+        mPref = getApplicationContext().getSharedPreferences("RideStatus",  MODE_PRIVATE);
+        mEditor = mPref.edit();
+
+        mIdDriver = getIntent().getStringExtra("idDriver");
+
         getStatus();
         getClientBooking();
+    }
+
+    @Override
+    public void onBackPressed() {
+        moveTaskToBack(true);
     }
 
     private void getStatus() {
@@ -133,7 +148,12 @@ public class MapClientBookingActivity extends AppCompatActivity implements OnMap
                     }
                     if (status.equals("start")) {
                         mTextViewStatusBooking.setText("Estado: Viaje Iniciado");
-                        startBooking();
+                        String statusPref = mPref.getString("status","");
+
+                        if(!statusPref.equals("start")){
+                            startBooking();
+                        }
+
                     } else if (status.equals("finish")) {
                         mTextViewStatusBooking.setText("Estado: Viaje Finalizado");
                         finishBooking();
@@ -149,14 +169,27 @@ public class MapClientBookingActivity extends AppCompatActivity implements OnMap
     }
 
     private void finishBooking() {
+        mEditor.clear().commit();
         Intent intent = new Intent(MapClientBookingActivity.this, CalificationDriverActivity.class);
         startActivity(intent);
         finish();
     }
 
     private void startBooking() {
+        mEditor.putString("status","start");
+        mEditor.putString("idDriver",mIdDriver);
+        mEditor.apply();
+
         mMap.clear();
         mMap.addMarker(new MarkerOptions().position(mDestinationLatLng).title("Destino").icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_pin_blue)));
+
+        if(mDriverLatLng != null){
+            mMarkerDriver = mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(mDriverLatLng.latitude, mDriverLatLng.longitude))
+                    .title("Tu conductor")
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_location_driver)));
+        }
+
         drawRoute(mDestinationLatLng);
     }
 
@@ -180,15 +213,17 @@ public class MapClientBookingActivity extends AppCompatActivity implements OnMap
                     String origin = dataSnapshot.child("origin").getValue().toString();
                     String idDriver = dataSnapshot.child("idDriver").getValue().toString();
                     mIdDriver = idDriver;
-                    double destinationLat = Double.parseDouble(dataSnapshot.child("destinationLat").getValue().toString());
-                    double destinationLng = Double.parseDouble(dataSnapshot.child("destinationLng").getValue().toString());
+                    double destinatioLat = Double.parseDouble(dataSnapshot.child("destinationLat").getValue().toString());
+                    double destinatioLng = Double.parseDouble(dataSnapshot.child("destinationLng").getValue().toString());
 
                     double originLat = Double.parseDouble(dataSnapshot.child("originLat").getValue().toString());
                     double originLng = Double.parseDouble(dataSnapshot.child("originLng").getValue().toString());
                     mOriginLatLng = new LatLng(originLat, originLng);
-                    mDestinationLatLng = new LatLng(destinationLat, destinationLng);
-                    mTextViewOriginClientBooking.setText("Recoger en: " + origin);
-                    mTextViewDestinationClientBooking.setText("Destino: " + destination);
+                    mDestinationLatLng = new LatLng(destinatioLat, destinatioLng);
+
+                    mTextViewOriginClientBooking.setText("recoger en: " + origin);
+                    mTextViewDestinationClientBooking.setText("destino: " + destination);
+
                     mMap.addMarker(new MarkerOptions().position(mOriginLatLng).title("Recoger aqui").icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_pin_red)));
                     getDriver(idDriver);
                     getDriverLocation(idDriver);
@@ -208,15 +243,20 @@ public class MapClientBookingActivity extends AppCompatActivity implements OnMap
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
-                    String name = dataSnapshot.child("name").getValue().toString();
-                    String email = dataSnapshot.child("email").getValue().toString();
-                    String image = "";
                     if (dataSnapshot.hasChild("image")) {
-                        image = dataSnapshot.child("image").getValue().toString();
+                        String image = dataSnapshot.child("image").getValue().toString();
                         Picasso.with(MapClientBookingActivity.this).load(image).into(mImageViewBooking);
                     }
-                    mTextViewClientBooking.setText(name);
-                    mTextViewEmailClientBooking.setText(email);
+
+                    if (dataSnapshot.hasChild("name")) {
+                        String name = dataSnapshot.child("name").getValue().toString();
+                        mTextViewClientBooking.setText(name);
+                    }
+
+                    if (dataSnapshot.hasChild("email")) {
+                        String email = dataSnapshot.child("email").getValue().toString();
+                        mTextViewEmailClientBooking.setText(email);
+                    }
                 }
             }
 
@@ -227,7 +267,6 @@ public class MapClientBookingActivity extends AppCompatActivity implements OnMap
         });
     }
 
-
     private void getDriverLocation(String idDriver) {
         mListener = mGeofireProvider.getDriverLocation(idDriver).addValueEventListener(new ValueEventListener() {
             @Override
@@ -236,14 +275,13 @@ public class MapClientBookingActivity extends AppCompatActivity implements OnMap
                     double lat = Double.parseDouble(dataSnapshot.child("0").getValue().toString());
                     double lng = Double.parseDouble(dataSnapshot.child("1").getValue().toString());
                     mDriverLatLng = new LatLng(lat, lng);
-                    if (mMarkerDriver != null) {
-                        mMarkerDriver.remove();
-                    }
-                    mMarkerDriver = mMap.addMarker(new MarkerOptions()
-                            .position(new LatLng(lat, lng))
-                            .title("Tu conductor")
-                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_location_driver)));
+
                     if (mIsFirstTime) {
+                        mMarkerDriver = mMap.addMarker(new MarkerOptions()
+                                .position(new LatLng(lat, lng))
+                                .title("Tu conductor")
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_location_driver)));
+
                         mIsFirstTime = false;
                         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(
                                 new CameraPosition.Builder()
@@ -251,8 +289,35 @@ public class MapClientBookingActivity extends AppCompatActivity implements OnMap
                                         .zoom(15f)
                                         .build()
                         ));
-                        drawRoute(mOriginLatLng);
+
+                        String status = mPref.getString("status","");
+
+                        if(status.equals("start")){
+                            startBooking();
+                        }
+                        else{
+                            mEditor.putString("status","ride");
+                            mEditor.putString("idDriver",mIdDriver);
+                            mEditor.apply();
+                            drawRoute(mOriginLatLng);
+                        }
                     }
+
+                    if(mStartLatLng != null){
+                        mEndLatLng = mStartLatLng;
+                    }
+
+                    mStartLatLng = new LatLng(lat,lng);
+
+                    if(mEndLatLng != null){
+                        CarMoveAnim.carAnim(mMarkerDriver, mEndLatLng, mStartLatLng);
+                    }
+
+                } else {
+                    /**
+                     * Prueba si se ejecuta este TOAST
+                     */
+                    Toast.makeText(MapClientBookingActivity.this, "Los datos de localizacion del conductor no EXISTEN", Toast.LENGTH_LONG).show();
                 }
             }
 
@@ -293,6 +358,7 @@ public class MapClientBookingActivity extends AppCompatActivity implements OnMap
 
                 } catch (Exception e) {
                     Log.d("Error", "Error encontrado " + e.getMessage());
+
                 }
             }
 
