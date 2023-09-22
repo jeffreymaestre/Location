@@ -27,17 +27,23 @@
                 android:layout_height="wrap_content"
                 android:background="@color/colorPrimaryDark" />
 
-            <TextView
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="72dp"
+                android:layout_marginTop="60dp"
+                android:src="@drawable/slogan" />
+
+            <!---<TextView
                 android:id="@+id/textViewNameBookingDetail"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="UBER CLONE"
+                android:text="LOCATION"
                 android:textAlignment="center"
                 android:textColor="@color/colorWhite"
                 android:textSize="26sp"
                 android:textStyle="bold"
                 android:layout_margin="50dp" />
-
+                -->
         </com.github.florent37.shapeofview.shapes.ArcView>
 
 
@@ -134,8 +140,8 @@
     </LinearLayout>
 
     <ImageView
-        android:layout_width="150dp"
-        android:layout_height="150dp"
+        android:layout_width="157dp"
+        android:layout_height="170dp"
         android:src="@drawable/servicio"
         android:layout_marginTop="120dp"
         android:layout_marginBottom="20dp"

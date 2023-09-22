@@ -9,8 +9,4 @@
     <item android:id="@+id/action_update"
         android:title="Editar perfil"
         app:showAsAction="never" />
-
-    <item android:id="@+id/action_logout"
-        android:title="Cerrar sesion"
-        app:showAsAction="never" />
 </menu>

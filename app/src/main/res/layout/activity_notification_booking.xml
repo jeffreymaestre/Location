@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context=".activities.driver.NotificationBookingActivity">
+    tools:context=".activities.NotificationBookingActivity">
 
     <ScrollView
         android:layout_width="match_parent"
@@ -188,7 +188,7 @@
             android:text="RECHAZAR"
             android:layout_weight="1"
             android:background="@drawable/rounded_botton"
-            android:backgroundTint="#595959"
+            android:backgroundTint="@color/colorBlueLight"
             android:textColor="@color/colorWhite"
             android:layout_marginLeft="5dp"/>
 

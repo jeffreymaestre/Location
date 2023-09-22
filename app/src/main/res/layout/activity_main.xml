@@ -8,10 +8,22 @@
     android:background="@color/colorPrimary"
     tools:context=".activities.MainActivity">
 
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:text="CONDUCTOR"
+            android:textColor="@color/colorWhite"
+            android:textStyle="bold"
+            android:textSize="25dp" />
+
 
         <ImageView
             android:layout_width="150dp"
@@ -19,48 +31,65 @@
             android:src="@drawable/servicio"
             android:layout_marginTop="50dp"
             android:layout_gravity="center"/>
-        
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="App de prueba para el proyecto de grado"
+            android:text="@string/phone_description"
             android:textAlignment="center"
             android:textColor="@color/colorWhite"
-            android:layout_margin="40dp"
-            android:textSize="20dp"
+            android:layout_marginLeft="50dp"
+            android:layout_marginRight="50dp"
+            android:layout_marginTop="15dp"
+            android:layout_marginBottom="25dp"
+            android:textSize="17sp"
             android:textStyle="bold"/>
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="bottom"
-            android:layout_margin="20dp"
-            >
+            android:layout_marginBottom="25dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginLeft="20dp"
+            android:gravity="center_vertical">
 
-            <Button
-                android:id="@+id/btnDriver"
-                android:layout_width="0dp"
-                android:layout_weight="1"
+            <com.hbb20.CountryCodePicker
+                android:id="@+id/ccp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@drawable/rounded_botton"
-                android:text="SOY CONDUCTOR"
-                android:backgroundTint="@color/colorBlueLight"
-                android:textColor="@color/colorWhite"
-                android:layout_marginRight="5dp"/>
+                app:ccp_autoDetectCountry="true"
+                app:ccp_contentColor="@color/colorWhite"
+                app:ccp_textSize="18dp"
+                />
 
-            <Button
-                android:id="@+id/btnClient"
-                android:layout_width="0dp"
-                android:layout_weight="1"
+            <EditText
+                android:id="@+id/editTextPhone"
+                android:layout_width="200dp"
                 android:layout_height="wrap_content"
-                android:text="SOY CLIENTE"
-                android:backgroundTint="@color/colorWhite"
-                android:background="@drawable/rounded_botton"
-                android:layout_marginLeft="5dp"/>
+                android:hint="Telefono"
+                android:inputType="phone"
+                android:textSize="18dp"
+                android:theme="@style/EditTextWhite"/>
 
         </LinearLayout>
 
+
+
+        <Button
+            android:id="@+id/btnGoToLogin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="30dp"
+            android:background="@drawable/rounded_botton"
+            android:text="ENVIAR CODIGO"
+            android:backgroundTint="@color/colorBlueLight"
+            android:textColor="@color/colorWhite"
+            android:layout_marginRight="30dp"/>
+
+
+
     </LinearLayout>
+
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
